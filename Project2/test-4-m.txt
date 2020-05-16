@@ -1,0 +1,19 @@
+# Test part the 4th
+quiver-capacity: 88
+random-seed: 888888
+max-rand-distance: 88
+max-rand-speed: 8
+max-rand-health: 8
+---
+round: 1
+random-zombies: 8
+named-zombies: 0
+---
+round: 2
+random-zombies: 8
+named-zombies: 1
+ahsoka distance: 66 speed: 7 health: 66
+---
+round: 8
+random-zombies 8
+named-zombies: 0

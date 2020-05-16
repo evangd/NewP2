@@ -1,0 +1,11 @@
+# Test Case Part the 0th
+quiver-capacity: 8
+random-seed: 867530
+max-rand-distance: 8
+max-rand-speed: 8
+max-rand-health: 8
+---
+round: 1
+random-zombies: 8
+named-zombies: 1
+sheev distance: 1 speed: 66 health: 66 
