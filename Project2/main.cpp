@@ -8,7 +8,7 @@
 #include <getopt.h>
 #include "Zombie.h"
 #include "Player.h"
-//#include "P2Random.h"
+#include "P2random.h"
 using namespace std;
 
 struct Round {
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 			break;
 		case 's':
 			stats = true;
-            // Set statsNum to argument, need to figure out how to do that
+			statsNum = static_cast<size_t>(atoi(optarg));
 			break;
 		case 'm':
 			median = true;
@@ -68,19 +68,18 @@ int main(int argc, char *argv[]) {
 
 	queue<Round> rounds;
 	string junk;
-	int randSeed;
+	unsigned int randSeed;
 	unsigned int quiverCap;
 	unsigned int maxDist;
 	unsigned int maxSpeed;
 	unsigned int maxHealth;
 	unsigned int totalZombs = 0; // for reserving
 
-    // Initialize random number generator here
-
 	getline(cin, junk);
 
-	//Read in starting parameters
+	//Read in starting parameters and initialize number generator
 	cin >> junk >> quiverCap >> junk >> randSeed >> junk >> maxDist >> junk >> maxSpeed >> junk >> maxHealth;
+	P2random::initialize(randSeed, maxDist, maxSpeed, maxHealth);
 
 	// Read in rounds
 	while (cin >> junk) {
@@ -132,15 +131,17 @@ int main(int argc, char *argv[]) {
 		player.fillArrows();
 
 		// Move le zombies
-		for (size_t i = 0; i < liveList.size(); ++i) {
-			liveList[i]->update();
-            if (verbose)
-                cout << "Moved: " << liveList[i]->name << "(distance: " << liveList[i]->distance << ", speed: " 
-                << liveList[i]->speed << ", health: " << liveList[i]->health <<  ")\n";
-            if (liveList[i]->distance == 0) {
-                player.die();
-                killer = *liveList[i];
-            }
+		if (!liveList.empty()) {
+			for (size_t i = 0; i < liveList.size(); ++i) {
+				liveList[i]->update();
+				if (verbose)
+					cout << "Moved: " << liveList[i]->name << "(distance: " << liveList[i]->distance << ", speed: "
+					<< liveList[i]->speed << ", health: " << liveList[i]->health << ")\n";
+				if (liveList[i]->distance == 0) {
+					player.die();
+					killer = *liveList[i];
+				}
+			}
 		}
 
         // Check if player was killed
@@ -153,8 +154,12 @@ int main(int argc, char *argv[]) {
 		if (rounds.front().num == round) {
             // Create random zombies
             for (unsigned int i = 0; i < rounds.front().numRand; ++i) {
-                // Zombie *rando = new Zombie() --- Generate random zombies once I can get random number files downloaded
-                Zombie *newRando = nullptr;
+				string name = P2random::getNextZombieName();
+				unsigned int dist = P2random::getNextZombieDistance();
+				unsigned int speed = P2random::getNextZombieSpeed();
+				unsigned int health = P2random::getNextZombieHealth();
+				Zombie *newRando = new Zombie(name, dist, speed, health);
+
                 zombList.push_back(newRando);
                 liveList.push_back(newRando);
                 shootList.push(newRando);
@@ -165,7 +170,8 @@ int main(int argc, char *argv[]) {
 
             // Create named zombies
             for (unsigned int i = 0; i < rounds.front().numNamed; ++i) {
-                Zombie *newNamed = &rounds.front().namedZombs[i];
+				Zombie temp = rounds.front().namedZombs[i]; // Wonder if storying these in the round queue as Zombies is wasteful
+				Zombie *newNamed = new Zombie(temp.name, temp.distance, temp.speed, temp.health);
                 zombList.push_back(newNamed);
                 liveList.push_back(newNamed);
                 shootList.push(newNamed);
@@ -182,7 +188,7 @@ int main(int argc, char *argv[]) {
             --shootList.top()->health;
             if (shootList.top()->health == 0) {
                 deadList.push_back(shootList.top());
-                // liveList.erase(shootList.top()); Need to figure this out.
+				remove(liveList.begin(), liveList.end(), shootList.top());
                 if (verbose)
                     cout << "Destroyed: " << shootList.top()->name << "(distance: " << shootList.top()->distance << ", speed: "
                     << shootList.top()->speed << ", health: " << shootList.top()->health << ")\n";
@@ -202,7 +208,9 @@ int main(int argc, char *argv[]) {
 
         cout << "Zombies still active: " << liveList.size() << "\n";
 
-        for (size_t i = 0; i < min(statsNum, deadList.size()); ++i)
+		for (size_t i = 0; i < min(statsNum, deadList.size()); ++i) {
+
+		}
 
     } // Statistics stuff
 
