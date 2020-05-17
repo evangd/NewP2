@@ -13,9 +13,19 @@ public:
 		return alive;
 	}
 
+    bool quiverEmpty() {
+        if (arrows == 0)
+            return true;
+        return false;
+    }
+
 	void die() {
 		alive = false;
 	}
+
+    void shoot() {
+        --arrows;
+    }
 
 	void fillArrows() {
 		arrows = quiverCap;
