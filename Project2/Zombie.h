@@ -12,6 +12,7 @@ struct Zombie
 	unsigned int health;
 	unsigned int roundsActive = 1;
 	unsigned int eta;
+	bool alive = true;
 
 	void update() {
 		distance = max(0, static_cast<int>(distance) - static_cast<int>(speed)); // Will this be faster than just checking for the potential of wrapping, or even using an int? This might not even work.
@@ -27,14 +28,14 @@ struct Zombie
 	}
 
 	struct shootOrder {
-		bool operator()(const Zombie &left, const Zombie &right) {
-			if (left.eta == right.eta) {
-				if (left.health == right.health) {
-					return left.name < right.name;
+		bool operator()(const Zombie *left, const Zombie *right) {
+			if (left->eta == right->eta) {
+				if (left->health == right->health) {
+					return left->name < right->name;
 				}
-				return left.health < right.health;
+				return left->health < right->health;
 			}
-			return left.eta < right.eta;
+			return left->eta < right->eta;
 		}
 	};
 };

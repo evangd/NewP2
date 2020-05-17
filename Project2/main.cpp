@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'm':
 			median = true;
+			break;
 		default:
 			cerr << "Error: invalid option" << endl;
 			exit(1);
@@ -108,18 +109,17 @@ int main(int argc, char *argv[]) {
 
 	Player player(quiverCap);
 	vector<Zombie*> zombList;
-	vector<Zombie*> liveList;
     vector<Zombie*> deadList;
-	priority_queue<Zombie*> shootList;
+	priority_queue<Zombie*, vector<Zombie*>, Zombie::shootOrder> shootList;
     Zombie killer;
 	unsigned int round = 0; // Starts at 0 because increment happens towards beginning of loop
+	size_t liveTotal = 0;
 
 	zombList.reserve(totalZombs);
-	liveList.reserve(totalZombs);
     deadList.reserve(totalZombs);
 
 	while (player.isAlive()) {
-        if (liveList.empty() && rounds.empty()) {
+        if (liveTotal == 0 && rounds.empty()) {
             cout << "VICTORY IN ROUND " << round << "! " << deadList.back()->name << " was the last zombie.\n";
             break;
         }
@@ -131,15 +131,17 @@ int main(int argc, char *argv[]) {
 		player.fillArrows();
 
 		// Move le zombies
-		if (!liveList.empty()) {
-			for (size_t i = 0; i < liveList.size(); ++i) {
-				liveList[i]->update();
-				if (verbose)
-					cout << "Moved: " << liveList[i]->name << "(distance: " << liveList[i]->distance << ", speed: "
-					<< liveList[i]->speed << ", health: " << liveList[i]->health << ")\n";
-				if (liveList[i]->distance == 0) {
-					player.die();
-					killer = *liveList[i];
+		if (liveTotal != 0) {
+			for (size_t i = 0; i < zombList.size(); ++i) {
+				if (zombList[i]->alive) {
+					zombList[i]->update();
+					if (verbose)
+						cout << "Moved: " << zombList[i]->name << " (distance: " << zombList[i]->distance << ", speed: "
+						<< zombList[i]->speed << ", health: " << zombList[i]->health << ")\n";
+					if (zombList[i]->distance == 0) {
+						player.die();
+						killer = *zombList[i];
+					}
 				}
 			}
 		}
@@ -151,7 +153,7 @@ int main(int argc, char *argv[]) {
         }
 
 		// Zombie generation goes inside this if statement
-		if (rounds.front().num == round) {
+		if (!rounds.empty() && rounds.front().num == round) {
             // Create random zombies
             for (unsigned int i = 0; i < rounds.front().numRand; ++i) {
 				string name = P2random::getNextZombieName();
@@ -161,10 +163,10 @@ int main(int argc, char *argv[]) {
 				Zombie *newRando = new Zombie(name, dist, speed, health);
 
                 zombList.push_back(newRando);
-                liveList.push_back(newRando);
                 shootList.push(newRando);
+				++liveTotal;
                 if (verbose)
-                    cout << "Created: " << newRando->name << "(distance: " << newRando->distance << ", speed: "
+                    cout << "Created: " << newRando->name << " (distance: " << newRando->distance << ", speed: "
                     << newRando->speed << ", health: " << newRando->health << ")\n";
             }
 
@@ -173,24 +175,25 @@ int main(int argc, char *argv[]) {
 				Zombie temp = rounds.front().namedZombs[i]; // Wonder if storying these in the round queue as Zombies is wasteful
 				Zombie *newNamed = new Zombie(temp.name, temp.distance, temp.speed, temp.health);
                 zombList.push_back(newNamed);
-                liveList.push_back(newNamed);
                 shootList.push(newNamed);
+				++liveTotal;
                 if (verbose)
-                    cout << "Created: " << newNamed->name << "(distance: " << newNamed->distance << ", speed: " 
+                    cout << "Created: " << newNamed->name << " (distance: " << newNamed->distance << ", speed: " 
                     << newNamed->speed << ", health: " << newNamed->health << ")\n";
             }
             rounds.pop();
 		} // if statement for zombie generation
 
         // Gegen die Zombies kämpfen
-        while (!player.quiverEmpty()) {
+        while (!player.quiverEmpty() && liveTotal != 0) {
             player.shoot();
             --shootList.top()->health;
             if (shootList.top()->health == 0) {
+				shootList.top()->alive = false;
                 deadList.push_back(shootList.top());
-				remove(liveList.begin(), liveList.end(), shootList.top());
+				--liveTotal;
                 if (verbose)
-                    cout << "Destroyed: " << shootList.top()->name << "(distance: " << shootList.top()->distance << ", speed: "
+                    cout << "Destroyed: " << shootList.top()->name << " (distance: " << shootList.top()->distance << ", speed: "
                     << shootList.top()->speed << ", health: " << shootList.top()->health << ")\n";
 
                 shootList.pop();
@@ -202,17 +205,28 @@ int main(int argc, char *argv[]) {
         if (median && !deadList.empty()) {
             // Print median, but I'm going to think about how to do median a bit better
         }
-	} // round loopx
+	} // round loop
 
     if (stats) {
 
-        cout << "Zombies still active: " << liveList.size() << "\n";
+        cout << "Zombies still active: " << zombList.size() - deadList.size() << "\n";
 
 		for (size_t i = 0; i < min(statsNum, deadList.size()); ++i) {
 
 		}
 
     } // Statistics stuff
+
+	for (size_t i = 0; i < zombList.size(); ++i) {
+		if (i < deadList.size())
+			deadList[i] = nullptr;
+		/*if (!shootList.empty()) {
+			shootList.top() = nullptr;
+			shootList.pop();
+		}*/
+		delete zombList[i];
+		zombList[i] = nullptr;
+	}
 
 	return 0;
 }

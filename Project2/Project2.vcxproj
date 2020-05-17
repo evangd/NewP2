@@ -146,8 +146,6 @@
     <ClCompile Include="getopt.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="P2random.cpp" />
-    <ClCompile Include="Player.cpp" />
-    <ClCompile Include="Zombie.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="P2random.h" />
