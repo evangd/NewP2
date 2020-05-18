@@ -25,6 +25,12 @@ struct Round {
 
 };
 
+// Median helper functions
+void addMedian(priority_queue<unsigned int> &lows, priority_queue<unsigned int, vector<unsigned int>, greater<unsigned int>> &highs, unsigned int lifetime);
+unsigned int getMedian(const priority_queue<unsigned int> &lows, const priority_queue<unsigned int, vector<unsigned int>, greater<unsigned int>> &highs);
+
+
+/*--------MAIN FUNCTION--------*/
 int main(int argc, char *argv[]) {
 	std::ios_base::sync_with_stdio(false);
 
@@ -111,6 +117,8 @@ int main(int argc, char *argv[]) {
 	vector<Zombie*> zombList;
     vector<Zombie*> deadList;
 	priority_queue<Zombie*, vector<Zombie*>, Zombie::shootOrder> shootList;
+	priority_queue<unsigned int> lowHalf;
+	priority_queue<unsigned int, vector<unsigned int>, greater<unsigned int>> highHalf;
     Zombie killer;
 	unsigned int round = 0; // Starts at 0 because increment happens towards beginning of loop
 	size_t liveTotal = 0;
@@ -139,8 +147,9 @@ int main(int argc, char *argv[]) {
 						cout << "Moved: " << zombList[i]->name << " (distance: " << zombList[i]->distance << ", speed: "
 						<< zombList[i]->speed << ", health: " << zombList[i]->health << ")\n";
 					if (zombList[i]->distance == 0) {
+						if (player.isAlive())
+							killer = *zombList[i];
 						player.die();
-						killer = *zombList[i];
 					}
 				}
 			}
@@ -192,6 +201,8 @@ int main(int argc, char *argv[]) {
 				shootList.top()->alive = false;
                 deadList.push_back(shootList.top());
 				--liveTotal;
+				if (median)
+					addMedian(lowHalf, highHalf, shootList.top()->roundsActive);
                 if (verbose)
                     cout << "Destroyed: " << shootList.top()->name << " (distance: " << shootList.top()->distance << ", speed: "
                     << shootList.top()->speed << ", health: " << shootList.top()->health << ")\n";
@@ -203,7 +214,7 @@ int main(int argc, char *argv[]) {
         } // shoot loop
 
         if (median && !deadList.empty()) {
-            // Print median, but I'm going to think about how to do median a bit better
+			cout << "At the end of round " << round << ", the median zombie lifetime is " << getMedian(lowHalf, highHalf) << "\n";
         }
 	} // round loop
 
@@ -211,22 +222,79 @@ int main(int argc, char *argv[]) {
 
         cout << "Zombies still active: " << zombList.size() - deadList.size() << "\n";
 
+		cout << "First zombies killed:\n";
 		for (size_t i = 0; i < min(statsNum, deadList.size()); ++i) {
-
+			cout << deadList[i]->name << " " << i + 1 << "\n";
 		}
+		
+		cout << "Last zombies killed:\n";
+		size_t stop = max(0, static_cast<int>(deadList.size()) - static_cast<int>(statsNum));
+		size_t num = min(deadList.size(), statsNum);
+		for (size_t i = deadList.size() - 1; i > stop; --i) {
+			cout << deadList[i]->name << " " << num-- << "\n";
+		}
+		cout << deadList[stop]->name << " " << 1 << "\n";
+
+
+		// Oh boy, prepare for the slowdown
+		Zombie::mostActive mostA;
+		sort(zombList.begin(), zombList.end(), mostA);
+
+		cout << "Most active zombies:\n";
+		for (size_t i = 0; i < min(statsNum, zombList.size()); ++i) {
+			cout << zombList[i]->name << " " << zombList[i]->roundsActive << "\n";
+		}
+
+		Zombie::leastActive leastA;
+		sort(zombList.begin(), zombList.end(), leastA);
+
+		cout << "Least active zombies:\n";
+		for (size_t i = 0; i < min(statsNum, zombList.size()); ++i) {
+			cout << zombList[i]->name << " " << zombList[i]->roundsActive << "\n";
+		}
+
 
     } // Statistics stuff
 
+	// Free up dat memory
 	for (size_t i = 0; i < zombList.size(); ++i) {
 		if (i < deadList.size())
 			deadList[i] = nullptr;
-		/*if (!shootList.empty()) {
-			shootList.top() = nullptr;
-			shootList.pop();
-		}*/
 		delete zombList[i];
 		zombList[i] = nullptr;
 	}
 
 	return 0;
+}
+
+// Median helper function definitions
+
+void addMedian(priority_queue<unsigned int> &lows, priority_queue<unsigned int, vector<unsigned int>, greater<unsigned int>> &highs, unsigned int lifetime) {
+
+	if (lows.empty() || lifetime < lows.top())
+		lows.push(lifetime);
+	else
+		highs.push(lifetime);
+
+	// rebalance
+
+	if (lows.size() - highs.size() == 2) {
+		highs.push(lows.top());
+		lows.pop();
+	}
+	else if (highs.size() - lows.size() == 2) {
+		lows.push(highs.top());
+		highs.pop();
+	}
+}
+
+unsigned int getMedian(const priority_queue<unsigned int> &lows, const priority_queue<unsigned int, vector<unsigned int>, greater<unsigned int>> &highs) {
+
+	if (lows.size() > highs.size())
+		return lows.top();
+	else if (highs.size() > lows.size())
+		return highs.top();
+	else
+		return (lows.top() + highs.top()) / 2;
+
 }

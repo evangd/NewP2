@@ -1,0 +1,15 @@
+# Test Case Part the 0th
+quiver-capacity: 10
+random-seed: 867530
+max-rand-distance: 8
+max-rand-speed: 1
+max-rand-health: 20
+---
+round: 1
+random: 5
+---
+round: 2
+random: 5
+---
+round: 3
+random: 5
