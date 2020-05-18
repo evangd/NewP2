@@ -228,12 +228,10 @@ int main(int argc, char *argv[]) {
 		}
 		
 		cout << "Last zombies killed:\n";
-		size_t stop = max(0, static_cast<int>(deadList.size()) - static_cast<int>(statsNum));
-		size_t num = min(deadList.size(), statsNum);
-		for (size_t i = deadList.size() - 1; i > stop; --i) {
-			cout << deadList[i]->name << " " << num-- << "\n";
+		size_t count = min(statsNum, deadList.size());
+		for (int i = static_cast<int>(deadList.size()) - 1; i >= max(0, static_cast<int>(deadList.size()) - static_cast<int>(statsNum)); --i) {
+			cout << deadList[i]->name << " " << count-- << "\n";
 		}
-		cout << deadList[stop]->name << " " << 1 << "\n";
 
 
 		// Oh boy, prepare for the slowdown
