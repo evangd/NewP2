@@ -142,7 +142,9 @@ int main(int argc, char *argv[]) {
 		if (liveTotal != 0) {
 			for (size_t i = 0; i < zombList.size(); ++i) {
 				if (zombList[i]->alive) {
-					zombList[i]->update();
+					zombList[i]->distance = max(0, static_cast<int>(zombList[i]->distance) - static_cast<int>(zombList[i]->speed));
+					zombList[i]->eta = zombList[i]->distance / zombList[i]->speed;
+					++zombList[i]->roundsActive;
 					if (verbose)
 						cout << "Moved: " << zombList[i]->name << " (distance: " << zombList[i]->distance << ", speed: "
 						<< zombList[i]->speed << ", health: " << zombList[i]->health << ")\n";
