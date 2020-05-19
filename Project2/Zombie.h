@@ -14,12 +14,6 @@ struct Zombie
 	unsigned int eta;
 	bool alive = true;
 
-	void update() {
-		distance = max(0, static_cast<int>(distance) - static_cast<int>(speed));
-		eta = distance / speed;
-		++roundsActive;
-	}
-
 	Zombie() {}
 
 	Zombie(string name, unsigned int distance, unsigned int speed, unsigned int health) :
